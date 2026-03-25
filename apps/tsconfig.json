@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@bridgewise/bridge-core": ["../../libs/bridge-core/src"],
+      "@bridgewise/bridge-core/*": ["../../libs/bridge-core/src/*"],
+      "@/*": ["../../src/*"]
+    }
+  },
+  "include": [
+    "../../src/**/*.ts",
+    "../../libs/bridge-core/src/**/*.ts"
+  ],
+  "exclude": [
+    "../../src/**/*.spec.ts",
+    "../../src/**/*.e2e-spec.ts",
+    "../../libs/bridge-core/src/**/__tests__/**",
+    "../../apps/**",
+    "../../examples/**",
+    "../../packages/**",
+    "../../dist/**",
+    "../../node_modules/**"
+  ]
+}
