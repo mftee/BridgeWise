@@ -19,6 +19,7 @@ import {
   ApiServiceUnavailableResponse,
 } from '@nestjs/swagger';
 import { BridgeCompareService } from './bridge-compare.service';
+import { BridgeStatusService, BridgeStatusInfo } from './bridge-status.service';
 import { GetQuotesDto } from './dto';
 import { QuoteResponse, NormalizedQuote } from './interfaces';
 
@@ -32,7 +33,10 @@ import { QuoteResponse, NormalizedQuote } from './interfaces';
   }),
 )
 export class BridgeCompareController {
-  constructor(private readonly bridgeCompareService: BridgeCompareService) {}
+  constructor(
+    private readonly bridgeCompareService: BridgeCompareService,
+    private readonly bridgeStatusService: BridgeStatusService,
+  ) {}
 
   @Get('quotes')
   @HttpCode(HttpStatus.OK)
@@ -86,4 +90,36 @@ export class BridgeCompareController {
   getSupportedBridges() {
     return this.bridgeCompareService.getSupportedBridges();
   }
+
+  @Get('status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get all bridge statuses',
+    description: 'Returns the current status and uptime metrics for all bridge providers.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Bridge statuses returned successfully',
+  })
+  getAllBridgesStatus(): BridgeStatusInfo[] {
+    return this.bridgeStatusService.getAllBridgesStatus();
+  }
+
+  @Get('status/:bridgeId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get specific bridge status',
+    description: 'Returns the current status, uptime, and health metrics for a specific bridge.',
+  })
+  @ApiParam({
+    name: 'bridgeId',
+    description: 'Bridge provider identifier',
+    example: 'stargate',
+  })
+  @ApiResponse({ status: 200, description: 'Bridge status returned' })
+  @ApiNotFoundResponse({ description: 'Bridge not found' })
+  getBridgeStatus(@Param('bridgeId') bridgeId: string): BridgeStatusInfo | undefined {
+    return this.bridgeStatusService.getBridgeStatus(bridgeId);
+  }
 }
+

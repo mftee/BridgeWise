@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,12 +12,14 @@ import { BenchmarkModule } from './benchmark/benchmark.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { TokenMetadataModule } from './token-metadata/token-metadata.module';
 import { FeatureFlagsModule } from './feature-flags/feature-flags.module';
+import { BridgeCompareModule } from './bridge-compare/bridge-compare.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { Transaction } from './transactions/entities/transaction.entity';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -42,6 +45,7 @@ import { Transaction } from './transactions/entities/transaction.entity';
     AnalyticsModule,
     TokenMetadataModule,
     FeatureFlagsModule,
+    BridgeCompareModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

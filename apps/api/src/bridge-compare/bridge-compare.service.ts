@@ -5,6 +5,7 @@ import { ReliabilityService } from './reliability.service';
 import { RankingService } from './ranking.service';
 import { FailureRiskService } from './failure-risk.service';
 import { QuoteCacheService } from './quote-cache.service';
+import { BridgeStatusService } from './bridge-status.service';
 import { GetQuotesDto } from './dto';
 import {
   NormalizedQuote,
@@ -25,6 +26,7 @@ export class BridgeCompareService {
     private readonly rankingService: RankingService,
     private readonly failureRiskService: FailureRiskService,
     private readonly quoteCacheService: QuoteCacheService,
+    private readonly bridgeStatusService: BridgeStatusService,
   ) {}
 
   /**
@@ -57,19 +59,30 @@ export class BridgeCompareService {
     const { quotes: rawQuotes, failedProviders } =
       await this.aggregationService.fetchRawQuotes(params);
 
+    // Filter out quotes from offline bridges
+    const availableQuotes = rawQuotes.filter(
+      (quote) => !this.bridgeStatusService.isOffline(quote.bridgeId),
+    );
+
+    if (availableQuotes.length === 0 && rawQuotes.length > 0) {
+      this.logger.warn(
+        `All bridge quotes are offline. Total providers: ${rawQuotes.length}`,
+      );
+    }
+
     const slippageMap = this.slippageService.batchEstimateSlippage(
-      rawQuotes,
+      availableQuotes,
       dto.sourceToken,
       dto.sourceChain,
       dto.amount,
     );
 
-    const bridgeIds = rawQuotes.map((q) => q.bridgeId);
+    const bridgeIds = availableQuotes.map((q) => q.bridgeId);
     const reliabilityMap =
       this.reliabilityService.batchCalculateScores(bridgeIds);
     const metricsMap = this.reliabilityService.batchGetMetrics(bridgeIds);
 
-    const normalizedQuotes: NormalizedQuote[] = rawQuotes.map((raw) =>
+    const normalizedQuotes: NormalizedQuote[] = availableQuotes.map((raw) =>
       this.normalizeQuote(raw, params, slippageMap, reliabilityMap, metricsMap),
     );
 
@@ -81,20 +94,23 @@ export class BridgeCompareService {
     const bestRoute = rankedQuotes[0];
     if (!bestRoute) {
       throw new NotFoundException(
-        'No valid routes found for the requested pair',
+        'No valid routes found for the requested pair. Available bridges may be offline.',
       );
     }
 
+    const offlineBridgesCount = rawQuotes.length - availableQuotes.length;
     const response: QuoteResponse = {
       quotes: rankedQuotes,
       bestRoute,
       rankingMode: params.rankingMode,
       requestParams: params,
       totalProviders: rawQuotes.length + failedProviders,
-      successfulProviders: rawQuotes.length,
+      successfulProviders: availableQuotes.length,
       fetchDurationMs: Date.now() - startTime,
       cacheHit: false,
+      offlineBridgesCount,
     };
+
 
     this.quoteCacheService.set(cacheKey, { ...response, cacheHit: true, cachedAt: new Date() });
 
