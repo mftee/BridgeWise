@@ -28,8 +28,30 @@ export * from './fee-estimation';
 // Benchmarking
 export * from './benchmark';
 
-// Error Codes and Mapping
+// Error Codes and Mapping (Legacy)
 export * from './error-codes';
+
+// SDK Error Codes (Standardized)
+export {
+  SDKError,
+  SDKErrorCode,
+  SDKErrorCategory,
+  SDKErrorSeverity,
+  SDKErrors,
+  SDK_ERROR_METADATA,
+  isSDKError,
+  isSDKErrorCode,
+  isSDKErrorCategory,
+  isRetryableError,
+  toSDKError,
+  fromLegacyErrorCode,
+  LEGACY_BRIDGE_ERROR_MAP,
+  LEGACY_ADAPTER_ERROR_MAP,
+} from './sdk-errors';
+export type {
+  SDKErrorMetadata,
+  SDKErrorDetails,
+} from './sdk-errors';
 
 // Aggregator
 export { BridgeAggregator } from './aggregator';
