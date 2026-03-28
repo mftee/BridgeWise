@@ -853,7 +853,7 @@ export default function BridgeWiseDemo() {
               </div>
             </form>
           </div>
-        </div>
+        </div>  // bridgewise code
       )}
     </>
   );

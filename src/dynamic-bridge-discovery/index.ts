@@ -5,7 +5,7 @@ export { BridgeModule } from './module/bridge.module';
 export { BridgeService } from './bridge.service';
 export { BridgeRegistry } from './registry/bridge.registry';
 export { BridgeLoader } from './loaders/bridge.loader';
-
+ // bridgewise code
 // Interfaces
 export {
   BridgeAdapter,
