@@ -44,6 +44,19 @@ export class Transaction {
   @Column({ type: 'text', nullable: true })
   error: string;
 
+  @Column({ type: 'int', default: 0 })
+  retryCount: number;
+
+  @Column({ type: 'int', default: 0 })
+  maxRetries: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  retryAttempts: Array<{
+    attempt: number;
+    timestamp: Date;
+    error?: string;
+  }>;
+
   @CreateDateColumn()
   createdAt: Date;
 

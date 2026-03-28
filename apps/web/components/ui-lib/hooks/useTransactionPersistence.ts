@@ -12,6 +12,20 @@ export interface PartialTransferInfo {
   succeededSteps: string[];
 }
 
+export interface RetryAttemptInfo {
+  attempt: number;
+  timestamp: number;
+  error?: string;
+}
+
+export interface RetryInfo {
+  isRetrying: boolean;
+  retryCount: number;
+  maxRetries: number;
+  attempts: RetryAttemptInfo[];
+  nextRetryAt?: number;
+}
+
 export interface TransactionState {
   id: string;
   status: TransactionStatus;
@@ -20,6 +34,7 @@ export interface TransactionState {
   txHash?: string;
   timestamp: number;
   partialInfo?: PartialTransferInfo;
+  retryInfo?: RetryInfo;
 }
 
 const STORAGE_KEY = 'bridgewise_tx_state';
@@ -166,6 +181,60 @@ export const useTransactionPersistence = () => {
     });
   }, []);
 
+  const startRetry = useCallback((maxRetries: number = 3, backoffMs: number = 1000) => {
+    setState((prev: TransactionState) => ({
+      ...prev,
+      retryInfo: {
+        isRetrying: true,
+        retryCount: (prev.retryInfo?.retryCount || 0) + 1,
+        maxRetries,
+        attempts: prev.retryInfo?.attempts || [],
+        nextRetryAt: undefined,
+      },
+      status: 'pending',
+      step: `Retrying... (Attempt ${(prev.retryInfo?.retryCount || 0) + 1}/${maxRetries})`,
+      timestamp: Date.now(),
+    }));
+  }, []);
+
+  const logRetryAttempt = useCallback((error?: string) => {
+    setState((prev: TransactionState) => {
+      if (!prev.retryInfo) return prev;
+      
+      const newAttempts: RetryAttemptInfo[] = [
+        ...prev.retryInfo.attempts,
+        {
+          attempt: prev.retryInfo.retryCount,
+          timestamp: Date.now(),
+          error,
+        },
+      ];
+
+      return {
+        ...prev,
+        retryInfo: {
+          ...prev.retryInfo,
+          isRetrying: false,
+          attempts: newAttempts,
+        },
+        timestamp: Date.now(),
+      };
+    });
+  }, []);
+
+  const markRetrySuccess = useCallback(() => {
+    setState((prev: TransactionState) => ({
+      ...prev,
+      status: 'success',
+      retryInfo: prev.retryInfo ? {
+        ...prev.retryInfo,
+        isRetrying: false,
+      } : undefined,
+      step: 'Transaction completed successfully',
+      timestamp: Date.now(),
+    }));
+  }, []);
+
   return {
     state,
     updateState,
@@ -173,5 +242,8 @@ export const useTransactionPersistence = () => {
     startTransaction,
     markPartialSuccess,
     markPartialFailure,
+    startRetry,
+    logRetryAttempt,
+    markRetrySuccess,
   };
 };
