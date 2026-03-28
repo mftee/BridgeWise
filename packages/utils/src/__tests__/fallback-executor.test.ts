@@ -19,7 +19,7 @@ import { NormalizedRoute, BridgeProvider } from '../types';
 function createMockRoute(
   id: string,
   adapter: BridgeProvider = 'hop',
-  reliability: number = 0.95
+  reliability: number = 0.95,
 ): NormalizedRoute {
   return {
     id,
@@ -94,10 +94,12 @@ describe('FallbackRouteExecutor', () => {
     it('includes execution time in result', async () => {
       const routes = [createMockRoute('route-1')];
 
-      const executeFn: RouteExecutorFn = vi.fn().mockImplementation(async () => {
-        await new Promise((r) => setTimeout(r, 100));
-        return { success: true, transactionHash: '0x123' };
-      });
+      const executeFn: RouteExecutorFn = vi
+        .fn()
+        .mockImplementation(async () => {
+          await new Promise((r) => setTimeout(r, 100));
+          return { success: true, transactionHash: '0x123' };
+        });
 
       const resultPromise = executor.executeWithFallback(routes, executeFn);
       await vi.runAllTimersAsync();
@@ -219,19 +221,21 @@ describe('FallbackRouteExecutor', () => {
       const routes = [createMockRoute('route-1')];
 
       // Simulate a long-running execution
-      const executeFn: RouteExecutorFn = vi.fn().mockImplementation(async () => {
-        await new Promise((r) => setTimeout(r, 10000));
-        return { success: true, transactionHash: '0x123' };
-      });
+      const executeFn: RouteExecutorFn = vi
+        .fn()
+        .mockImplementation(async () => {
+          await new Promise((r) => setTimeout(r, 10000));
+          return { success: true, transactionHash: '0x123' };
+        });
 
       // Start first execution (don't await)
       const firstExecution = executor.executeWithFallback(routes, executeFn);
 
       // Attempt second execution immediately
       await vi.advanceTimersByTimeAsync(50);
-      
+
       await expect(
-        executor.executeWithFallback(routes, executeFn)
+        executor.executeWithFallback(routes, executeFn),
       ).rejects.toMatchObject({
         code: FallbackErrorCode.DUPLICATE_EXECUTION,
       });
@@ -285,10 +289,7 @@ describe('FallbackRouteExecutor', () => {
     });
 
     it('emits switching status on fallback', async () => {
-      const routes = [
-        createMockRoute('route-1'),
-        createMockRoute('route-2'),
-      ];
+      const routes = [createMockRoute('route-1'), createMockRoute('route-2')];
 
       const executeFn: RouteExecutorFn = vi
         .fn()
@@ -300,7 +301,7 @@ describe('FallbackRouteExecutor', () => {
       await resultPromise;
 
       const switchingUpdates = statusUpdates.filter(
-        (s) => s.currentStatus === 'switching'
+        (s) => s.currentStatus === 'switching',
       );
       expect(switchingUpdates.length).toBeGreaterThan(0);
     });
@@ -318,7 +319,7 @@ describe('FallbackRouteExecutor', () => {
       await resultPromise;
 
       const completedUpdate = statusUpdates.find(
-        (s) => s.currentStatus === 'completed'
+        (s) => s.currentStatus === 'completed',
       );
       expect(completedUpdate).toBeDefined();
     });
@@ -335,7 +336,7 @@ describe('FallbackRouteExecutor', () => {
       await resultPromise.catch(() => {});
 
       const failedUpdate = statusUpdates.find(
-        (s) => s.currentStatus === 'failed'
+        (s) => s.currentStatus === 'failed',
       );
       expect(failedUpdate).toBeDefined();
     });
@@ -351,13 +352,15 @@ describe('FallbackRouteExecutor', () => {
 
       const routes = [createMockRoute('route-1')];
 
-      const executeFn: RouteExecutorFn = vi.fn().mockImplementation(async () => {
-        await new Promise((r) => setTimeout(r, 5000));
-        return { success: true, transactionHash: '0x123' };
-      });
+      const executeFn: RouteExecutorFn = vi
+        .fn()
+        .mockImplementation(async () => {
+          await new Promise((r) => setTimeout(r, 5000));
+          return { success: true, transactionHash: '0x123' };
+        });
 
       const resultPromise = executor.executeWithFallback(routes, executeFn);
-      
+
       // Advance past timeout
       await vi.advanceTimersByTimeAsync(150);
 
@@ -371,7 +374,9 @@ describe('FallbackRouteExecutor', () => {
     it('throws NO_FALLBACK_AVAILABLE for empty routes array', async () => {
       const executeFn: RouteExecutorFn = vi.fn();
 
-      await expect(executor.executeWithFallback([], executeFn)).rejects.toMatchObject({
+      await expect(
+        executor.executeWithFallback([], executeFn),
+      ).rejects.toMatchObject({
         code: FallbackErrorCode.NO_FALLBACK_AVAILABLE,
       });
 
@@ -381,10 +386,7 @@ describe('FallbackRouteExecutor', () => {
 
   describe('failed routes tracking', () => {
     it('tracks failed routes', async () => {
-      const routes = [
-        createMockRoute('route-1'),
-        createMockRoute('route-2'),
-      ];
+      const routes = [createMockRoute('route-1'), createMockRoute('route-2')];
 
       const executeFn: RouteExecutorFn = vi
         .fn()

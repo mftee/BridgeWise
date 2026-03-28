@@ -46,7 +46,7 @@ export class FallbackExecutionError extends Error {
     message: string,
     code: FallbackErrorCodeType,
     attemptedRoutes: NormalizedRoute[] = [],
-    route?: NormalizedRoute
+    route?: NormalizedRoute,
   ) {
     super(message);
     this.name = 'FallbackExecutionError';
@@ -101,7 +101,9 @@ export interface FallbackExecutorConfig {
 /**
  * Default configuration values
  */
-const DEFAULT_CONFIG: Required<Omit<FallbackExecutorConfig, 'onStatusChange' | 'fallbackRankingWeights'>> = {
+const DEFAULT_CONFIG: Required<
+  Omit<FallbackExecutorConfig, 'onStatusChange' | 'fallbackRankingWeights'>
+> = {
   maxFallbackAttempts: 3,
   executionTimeout: 30000,
   fallbackDelayMs: 1000,
@@ -112,7 +114,7 @@ const DEFAULT_CONFIG: Required<Omit<FallbackExecutorConfig, 'onStatusChange' | '
  * Route executor function signature
  */
 export type RouteExecutorFn = (
-  route: NormalizedRoute
+  route: NormalizedRoute,
 ) => Promise<{ success: boolean; transactionHash?: string; error?: string }>;
 
 /**
@@ -135,14 +137,18 @@ export type RouteExecutorFn = (
  * ```
  */
 export class FallbackRouteExecutor {
-  private config: Required<Omit<FallbackExecutorConfig, 'onStatusChange' | 'fallbackRankingWeights'>>;
+  private config: Required<
+    Omit<FallbackExecutorConfig, 'onStatusChange' | 'fallbackRankingWeights'>
+  >;
   private onStatusChange?: FallbackStatusCallback;
   private fallbackRankingWeights?: Partial<RankingWeights>;
   private ranker: RouteRanker;
 
   /** Track active executions to prevent duplicates */
-  private activeExecutions: Map<string, { startTime: number; route: NormalizedRoute }> =
-    new Map();
+  private activeExecutions: Map<
+    string,
+    { startTime: number; route: NormalizedRoute }
+  > = new Map();
 
   /** Track failed routes to avoid retrying */
   private failedRoutes: Set<string> = new Set();
@@ -158,8 +164,11 @@ export class FallbackRouteExecutor {
     // Initialize ranker with fallback-optimized weights (prefer reliability)
     this.ranker = new RouteRanker(
       this.fallbackRankingWeights
-        ? { ...{ costWeight: 0.2, latencyWeight: 0.2, reliabilityWeight: 0.6 }, ...this.fallbackRankingWeights }
-        : { costWeight: 0.2, latencyWeight: 0.2, reliabilityWeight: 0.6 }
+        ? {
+            ...{ costWeight: 0.2, latencyWeight: 0.2, reliabilityWeight: 0.6 },
+            ...this.fallbackRankingWeights,
+          }
+        : { costWeight: 0.2, latencyWeight: 0.2, reliabilityWeight: 0.6 },
     );
   }
 
@@ -173,18 +182,21 @@ export class FallbackRouteExecutor {
    */
   async executeWithFallback(
     routes: NormalizedRoute[],
-    executeFn: RouteExecutorFn
+    executeFn: RouteExecutorFn,
   ): Promise<ExecutionResult> {
     if (routes.length === 0) {
       throw new FallbackExecutionError(
         'No routes available for execution',
         FallbackErrorCode.NO_FALLBACK_AVAILABLE,
-        []
+        [],
       );
     }
 
     const attemptedRoutes: NormalizedRoute[] = [];
-    const maxAttempts = Math.min(this.config.maxFallbackAttempts, routes.length);
+    const maxAttempts = Math.min(
+      this.config.maxFallbackAttempts,
+      routes.length,
+    );
     let currentAttempt = 0;
 
     // Optionally re-rank routes for fallback prioritization
@@ -207,7 +219,7 @@ export class FallbackRouteExecutor {
           `Route ${route.id} is already being executed`,
           FallbackErrorCode.DUPLICATE_EXECUTION,
           attemptedRoutes,
-          route
+          route,
         );
       }
 
@@ -216,7 +228,7 @@ export class FallbackRouteExecutor {
         currentAttempt === 0 ? 'executing' : 'switching',
         route,
         currentAttempt + 1,
-        maxAttempts
+        maxAttempts,
       );
 
       // Mark execution as active
@@ -242,7 +254,10 @@ export class FallbackRouteExecutor {
         }
 
         // Execution returned failure (not exception)
-        this.handleRouteFailure(route, new Error(result.error || 'Execution failed'));
+        this.handleRouteFailure(
+          route,
+          new Error(result.error || 'Execution failed'),
+        );
       } catch (error) {
         this.handleRouteFailure(route, error as Error);
       }
@@ -253,7 +268,7 @@ export class FallbackRouteExecutor {
         route,
         currentAttempt + 1,
         maxAttempts,
-        new Error(`Route ${route.adapter} failed, switching to fallback`)
+        new Error(`Route ${route.adapter} failed, switching to fallback`),
       );
 
       // Wait before trying fallback
@@ -270,13 +285,13 @@ export class FallbackRouteExecutor {
       rankedRoutes[rankedRoutes.length - 1],
       maxAttempts,
       maxAttempts,
-      new Error('All fallback routes exhausted')
+      new Error('All fallback routes exhausted'),
     );
 
     throw new FallbackExecutionError(
       `All ${attemptedRoutes.length} routes failed`,
       FallbackErrorCode.ALL_ROUTES_FAILED,
-      attemptedRoutes
+      attemptedRoutes,
     );
   }
 
@@ -285,7 +300,7 @@ export class FallbackRouteExecutor {
    */
   private async executeWithTimeout(
     route: NormalizedRoute,
-    executeFn: RouteExecutorFn
+    executeFn: RouteExecutorFn,
   ): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
@@ -294,8 +309,8 @@ export class FallbackRouteExecutor {
             `Execution timeout after ${this.config.executionTimeout}ms`,
             FallbackErrorCode.TIMEOUT,
             [],
-            route
-          )
+            route,
+          ),
         );
       }, this.config.executionTimeout);
     });
@@ -347,7 +362,7 @@ export class FallbackRouteExecutor {
 
     console.error(
       `[FallbackRouteExecutor] Route ${route.id} (${route.adapter}) failed:`,
-      error.message
+      error.message,
     );
   }
 
@@ -359,7 +374,7 @@ export class FallbackRouteExecutor {
     route: NormalizedRoute,
     attemptNumber: number,
     totalRoutes: number,
-    error?: Error
+    error?: Error,
   ): void {
     this.onStatusChange?.({
       currentStatus: status,
@@ -434,7 +449,7 @@ export class FallbackRouteExecutor {
  * Create a pre-configured fallback executor for common scenarios
  */
 export function createFallbackExecutor(
-  scenario: 'aggressive' | 'balanced' | 'conservative' = 'balanced'
+  scenario: 'aggressive' | 'balanced' | 'conservative' = 'balanced',
 ): FallbackRouteExecutor {
   const configs: Record<string, FallbackExecutorConfig> = {
     aggressive: {
@@ -442,21 +457,33 @@ export function createFallbackExecutor(
       executionTimeout: 20000,
       fallbackDelayMs: 500,
       rerankOnFallback: true,
-      fallbackRankingWeights: { costWeight: 0.1, latencyWeight: 0.3, reliabilityWeight: 0.6 },
+      fallbackRankingWeights: {
+        costWeight: 0.1,
+        latencyWeight: 0.3,
+        reliabilityWeight: 0.6,
+      },
     },
     balanced: {
       maxFallbackAttempts: 3,
       executionTimeout: 30000,
       fallbackDelayMs: 1000,
       rerankOnFallback: true,
-      fallbackRankingWeights: { costWeight: 0.2, latencyWeight: 0.2, reliabilityWeight: 0.6 },
+      fallbackRankingWeights: {
+        costWeight: 0.2,
+        latencyWeight: 0.2,
+        reliabilityWeight: 0.6,
+      },
     },
     conservative: {
       maxFallbackAttempts: 2,
       executionTimeout: 45000,
       fallbackDelayMs: 2000,
       rerankOnFallback: false,
-      fallbackRankingWeights: { costWeight: 0.3, latencyWeight: 0.1, reliabilityWeight: 0.6 },
+      fallbackRankingWeights: {
+        costWeight: 0.3,
+        latencyWeight: 0.1,
+        reliabilityWeight: 0.6,
+      },
     },
   };
 

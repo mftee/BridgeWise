@@ -47,9 +47,9 @@ Fallback Bridge Routing automatically switches to alternative bridge routes when
 ### Basic Usage with FallbackRouteExecutor
 
 ```typescript
-import { 
-  FallbackRouteExecutor, 
-  createFallbackExecutor 
+import {
+  FallbackRouteExecutor,
+  createFallbackExecutor,
 } from '@bridgewise/bridge-core';
 
 // Create executor with custom config
@@ -69,7 +69,7 @@ const result = await executor.executeWithFallback(
   async (route) => {
     // Your bridge execution logic
     return await bridgeAdapter.execute(route);
-  }
+  },
 );
 
 console.log(`Success via ${result.route.adapter}`);
@@ -144,22 +144,22 @@ function BridgeTransaction() {
 
 ### FallbackExecutorConfig
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `maxFallbackAttempts` | `number` | `3` | Maximum fallback routes to try |
-| `executionTimeout` | `number` | `30000` | Timeout per execution attempt (ms) |
-| `fallbackDelayMs` | `number` | `1000` | Delay between fallback attempts (ms) |
-| `rerankOnFallback` | `boolean` | `true` | Re-rank routes before fallback selection |
-| `fallbackRankingWeights` | `RankingWeights` | Reliability-focused | Custom weights for fallback ranking |
-| `onStatusChange` | `Function` | - | Callback for status updates |
+| Option                   | Type             | Default             | Description                              |
+| ------------------------ | ---------------- | ------------------- | ---------------------------------------- |
+| `maxFallbackAttempts`    | `number`         | `3`                 | Maximum fallback routes to try           |
+| `executionTimeout`       | `number`         | `30000`             | Timeout per execution attempt (ms)       |
+| `fallbackDelayMs`        | `number`         | `1000`              | Delay between fallback attempts (ms)     |
+| `rerankOnFallback`       | `boolean`        | `true`              | Re-rank routes before fallback selection |
+| `fallbackRankingWeights` | `RankingWeights` | Reliability-focused | Custom weights for fallback ranking      |
+| `onStatusChange`         | `Function`       | -                   | Callback for status updates              |
 
 ### Pre-configured Scenarios
 
-| Scenario | Max Attempts | Timeout | Delay | Use Case |
-|----------|--------------|---------|-------|----------|
-| `aggressive` | 5 | 20s | 500ms | High-frequency trading |
-| `balanced` | 3 | 30s | 1000ms | General use (default) |
-| `conservative` | 2 | 45s | 2000ms | Large transactions |
+| Scenario       | Max Attempts | Timeout | Delay  | Use Case               |
+| -------------- | ------------ | ------- | ------ | ---------------------- |
+| `aggressive`   | 5            | 20s     | 500ms  | High-frequency trading |
+| `balanced`     | 3            | 30s     | 1000ms | General use (default)  |
+| `conservative` | 2            | 45s     | 2000ms | Large transactions     |
 
 ## Duplicate Execution Prevention
 
@@ -184,25 +184,25 @@ Executions are considered stale after `2 × executionTimeout` and are automatica
 
 ## Error Codes
 
-| Code | Description |
-|------|-------------|
-| `EXECUTION_FAILED` | Single route execution failed |
-| `ALL_ROUTES_FAILED` | All fallback routes exhausted |
-| `DUPLICATE_EXECUTION` | Route already being executed |
-| `NO_FALLBACK_AVAILABLE` | No routes provided |
-| `TIMEOUT` | Execution timed out |
+| Code                    | Description                   |
+| ----------------------- | ----------------------------- |
+| `EXECUTION_FAILED`      | Single route execution failed |
+| `ALL_ROUTES_FAILED`     | All fallback routes exhausted |
+| `DUPLICATE_EXECUTION`   | Route already being executed  |
+| `NO_FALLBACK_AVAILABLE` | No routes provided            |
+| `TIMEOUT`               | Execution timed out           |
 
 ## Status Updates
 
 The executor emits status updates throughout execution:
 
 ```typescript
-type FallbackExecutionStatus = 
-  | 'idle'       // Not executing
-  | 'executing'  // Primary route in progress
-  | 'switching'  // Switching to fallback
-  | 'completed'  // Success
-  | 'failed';    // All routes failed
+type FallbackExecutionStatus =
+  | 'idle' // Not executing
+  | 'executing' // Primary route in progress
+  | 'switching' // Switching to fallback
+  | 'completed' // Success
+  | 'failed'; // All routes failed
 ```
 
 ### Status Callback Payload
@@ -221,11 +221,11 @@ type FallbackExecutionStatus =
 
 The `useBridgeExecution` hook provides reactive state for UI:
 
-| State | Type | Description |
-|-------|------|-------------|
-| `fallbackInfo` | `FallbackRouteInfo \| null` | Current fallback details |
-| `isFallbackActive` | `boolean` | Whether fallback is in progress |
-| `fallbackAttempts` | `number` | Number of attempts made |
+| State              | Type                        | Description                     |
+| ------------------ | --------------------------- | ------------------------------- |
+| `fallbackInfo`     | `FallbackRouteInfo \| null` | Current fallback details        |
+| `isFallbackActive` | `boolean`                   | Whether fallback is in progress |
+| `fallbackAttempts` | `number`                    | Number of attempts made         |
 
 ### FallbackRouteInfo Structure
 
@@ -247,7 +247,8 @@ interface FallbackRouteInfo {
 import { vi } from 'vitest';
 
 it('switches to fallback on failure', async () => {
-  const executeFn = vi.fn()
+  const executeFn = vi
+    .fn()
     .mockResolvedValueOnce({ success: false, error: 'Liquidity error' })
     .mockResolvedValueOnce({ success: true, transactionHash: '0x123' });
 
@@ -262,11 +263,12 @@ it('switches to fallback on failure', async () => {
 
 ```typescript
 it('throws when all routes fail', async () => {
-  const executeFn = vi.fn()
+  const executeFn = vi
+    .fn()
     .mockResolvedValue({ success: false, error: 'Failed' });
 
   await expect(
-    executor.executeWithFallback(routes, executeFn)
+    executor.executeWithFallback(routes, executeFn),
   ).rejects.toMatchObject({
     code: 'ALL_ROUTES_FAILED',
   });
@@ -277,16 +279,16 @@ it('throws when all routes fail', async () => {
 
 ```typescript
 it('prevents duplicate execution', async () => {
-  const slowExecuteFn = vi.fn().mockImplementation(
-    () => new Promise(r => setTimeout(r, 10000))
-  );
+  const slowExecuteFn = vi
+    .fn()
+    .mockImplementation(() => new Promise((r) => setTimeout(r, 10000)));
 
   // Start first execution (don't await)
   executor.executeWithFallback(routes, slowExecuteFn);
 
   // Second execution should throw
   await expect(
-    executor.executeWithFallback(routes, slowExecuteFn)
+    executor.executeWithFallback(routes, slowExecuteFn),
   ).rejects.toMatchObject({
     code: 'DUPLICATE_EXECUTION',
   });
@@ -303,12 +305,12 @@ it('prevents duplicate execution', async () => {
 
 ## Files Changed
 
-| File | Description |
-|------|-------------|
-| `packages/utils/src/fallback-executor.ts` | Core fallback logic |
-| `packages/utils/src/__tests__/fallback-executor.test.ts` | Test suite |
-| `packages/utils/src/index.ts` | Export fallback executor |
-| `packages/ui/src/hooks/useBridgeExecution.ts` | React hook integration |
+| File                                                     | Description              |
+| -------------------------------------------------------- | ------------------------ |
+| `packages/utils/src/fallback-executor.ts`                | Core fallback logic      |
+| `packages/utils/src/__tests__/fallback-executor.test.ts` | Test suite               |
+| `packages/utils/src/index.ts`                            | Export fallback executor |
+| `packages/ui/src/hooks/useBridgeExecution.ts`            | React hook integration   |
 
 ## Related Documentation
 
