@@ -14,6 +14,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "types": ["node", "jest"],
     "paths": {
       "@bridgewise/bridge-core": ["../../packages/utils/src"],
       "@bridgewise/bridge-core/*": ["../../packages/utils/src/*"],

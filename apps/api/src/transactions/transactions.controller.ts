@@ -19,7 +19,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
