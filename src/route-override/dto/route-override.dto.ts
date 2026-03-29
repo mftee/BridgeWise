@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsBoolean,
   IsNumber,
-  Min,
+  Min, // bridgewise code
   Max,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';

@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTransactionPersistence } from './ui-lib/hooks/useTransactionPersistence';
 import { useIsMounted } from './ui-lib/utils/ssr';
+import { RetryFeedback } from './RetryFeedback';
 
 export const TransactionHeartbeat = () => {
     const isMounted = useIsMounted();
-    const { state, clearState } = useTransactionPersistence();
+    const { state, clearState, startRetry } = useTransactionPersistence();
 
     if (!isMounted || state.status === 'idle') {
         return null;
@@ -14,13 +15,18 @@ export const TransactionHeartbeat = () => {
     const isSuccess = state.status === 'success';
     const isFailed = state.status === 'failed';
     const isPartial = state.status === 'partial';
+    const isRetrying = state.retryInfo?.isRetrying || false;
+
+    const handleRetry = () => {
+        startRetry(state.retryInfo?.maxRetries || 3);
+    };
 
     return (
         <div className="fixed bottom-4 right-4 z-50 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden font-sans transition-all duration-300 ease-in-out transform translate-y-0">
             <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {isSuccess ? 'Transaction Complete' : isFailed ? 'Transaction Failed' : isPartial ? 'Partial Transfer' : 'Bridging Assets...'}
+                        {isSuccess ? 'Transaction Complete' : isFailed || isRetrying ? 'Transaction Status' : isPartial ? 'Partial Transfer' : 'Bridging Assets...'}
                     </h3>
                     <button
                         onClick={clearState}
@@ -34,11 +40,24 @@ export const TransactionHeartbeat = () => {
                     </button>
                 </div>
 
+                {/* Show retry feedback if retrying or has retry info */}
+                {state.retryInfo && (
+                    <div className="mb-4 -mx-4 -mb-4 px-4 py-3 bg-amber-50 dark:bg-amber-900/10 border-b border-amber-200 dark:border-amber-800">
+                        <RetryFeedback
+                            isRetrying={state.retryInfo.isRetrying}
+                            currentAttempt={state.retryInfo.retryCount}
+                            maxAttempts={state.retryInfo.maxRetries}
+                            lastError={state.retryInfo.attempts[state.retryInfo.attempts.length - 1]?.error}
+                            onRetry={handleRetry}
+                        />
+                    </div>
+                )}
+
                 <div className="flex items-center gap-3 mb-3">
                     <div className="relative flex-1">
                         <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                             <div
-                                className={`h-full transition-all duration-500 ease-out ${isSuccess ? 'bg-green-500' : isFailed ? 'bg-red-500' : isPartial ? 'bg-yellow-500' : 'bg-blue-600'
+                                className={`h-full transition-all duration-500 ease-out ${isSuccess ? 'bg-green-500' : isFailed && !isRetrying ? 'bg-red-500' : isRetrying ? 'bg-amber-500' : isPartial ? 'bg-yellow-500' : 'bg-blue-600'
                                     }`}
                                 style={{ width: `${state.progress}%` }}
                             />
@@ -61,7 +80,7 @@ export const TransactionHeartbeat = () => {
             </div>
 
             {/* status bar line at bottom */}
-            <div className={`h-1 w-full ${isSuccess ? 'bg-green-500' : isFailed ? 'bg-red-500' : isPartial ? 'bg-yellow-500 animate-pulse' : 'bg-blue-600 animate-pulse'
+            <div className={`h-1 w-full ${isSuccess ? 'bg-green-500' : isFailed && !isRetrying ? 'bg-red-500' : isRetrying ? 'bg-amber-500 animate-pulse' : isPartial ? 'bg-yellow-500 animate-pulse' : 'bg-blue-600 animate-pulse'
                 }`} />
         </div>
     );
