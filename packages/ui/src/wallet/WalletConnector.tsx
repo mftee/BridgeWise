@@ -1,4 +1,5 @@
 import React from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { useMultiWalletContext } from './MultiWalletProvider';
 
 export const WalletConnector: React.FC = () => {
@@ -41,7 +42,17 @@ export const WalletConnector: React.FC = () => {
           Connect {wallet.name}
         </button>
       ))}
-      <div>Active Account: {activeAccount ? activeAccount.address : 'None'}</div>
+      <div className="mt-4">
+        <strong>Active Account:</strong> {activeAccount ? activeAccount.address : 'None'}
+      </div>
+
+      {activeAccount && (
+        <div className="mt-3 p-3 border border-dashed rounded-lg inline-flex flex-col items-center max-w-xs">
+          <span className="text-sm text-zinc-600 dark:text-zinc-300 mb-2">Scan wallet address QR</span>
+          <QRCodeCanvas value={activeAccount.address} size={160} level="H" includeMargin={true} />
+        </div>
+      )}
+
       {error && <div style={{ color: 'red' }}>Error: {error.message}</div>}
     </div>
   );
